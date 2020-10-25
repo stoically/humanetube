@@ -1,0 +1,44 @@
+{
+  "scripts": {
+    "build": "rm -rf dist && parcel build --target browser src/index.html src/background.ts && cp src/manifest.json dist/browser",
+    "dev": "mkdir -p dist/browser && cp src/manifest.json dist/browser && parcel watch src/index.html src/background.ts"
+  },
+  "dependencies": {
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-hook-form": "^6.9.6",
+    "ytdl-core": "^3.4.2"
+  },
+  "devDependencies": {
+    "@types/firefox-webext-browser": "^78.0.1",
+    "@types/react": "^16.9.53",
+    "@types/react-dom": "^16.9.8",
+    "@typescript-eslint/eslint-plugin": "^4.5.0",
+    "@typescript-eslint/parser": "^4.5.0",
+    "eslint": "^7.12.0",
+    "eslint-config-prettier": "^6.14.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "parcel": "^2.0.0-nightly.429",
+    "web-ext": "^5.3.0"
+  },
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "extends": [
+      "plugin:@typescript-eslint/recommended",
+      "plugin:prettier/recommended",
+      "prettier/@typescript-eslint"
+    ]
+  },
+  "prettier": {
+    "trailingComma": "es5"
+  },
+  "targets": {
+    "browser": {
+      "engines": {
+        "browsers": [
+          "Firefox > 80"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "commonjs",
+    "noEmit": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "jsx": "react",
+    "paths": {
+      "~/*": ["src/*"]
+    }
+  }
+}
