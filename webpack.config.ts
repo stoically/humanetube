@@ -50,6 +50,12 @@ const config: webpack.Configuration = {
       https: require.resolve("https-browserify"),
       http: require.resolve("stream-http"),
       url: require.resolve("url"),
+      path: require.resolve("path-browserify"),
+      crypto: require.resolve("crypto-browserify"),
+      fs: false,
+      perf_hooks: false,
+      ws: false,
+      worker_threads: false,
     },
   },
   output: {

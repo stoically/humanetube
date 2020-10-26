@@ -2,11 +2,17 @@ import React, { ChangeEvent, useEffect, useState } from "react";
 import { videoFormat, downloadFromInfo } from "ytdl-core";
 import { SelectPicker } from "rsuite";
 import { State, SourceState } from "../types";
+import "@ffmpeg/core";
+import { createFFmpeg } from "@ffmpeg/ffmpeg";
 
 export function Formats({ state }: { state: State }): JSX.Element {
   const [ready, setReady] = useState(false);
   const [video, setVideo] = useState<SourceState>();
   const [audio, setAudio] = useState<SourceState>();
+  console.log(createFFmpeg);
+  const ffmpeg = createFFmpeg({
+    log: true,
+  });
 
   function updateSourceBuffer(
     buffer: SourceBuffer,
@@ -22,6 +28,7 @@ export function Formats({ state }: { state: State }): JSX.Element {
       buffer.appendBuffer(data);
     });
     reader.addListener("end", () => {
+      console.log("end of stream");
       state.mediaSource.endOfStream();
     });
 
@@ -93,6 +100,12 @@ export function Formats({ state }: { state: State }): JSX.Element {
     setAudio(await switchFormat(format, audio));
   }
 
+  async function download() {
+    console.log("loading ffmpeg");
+    ffmpeg.load();
+    // await ffmpeg.run("-i flame.avi -s 1920x1080 output.mp4");
+  }
+
   return (
     <>
       <SelectPicker
@@ -118,6 +131,7 @@ export function Formats({ state }: { state: State }): JSX.Element {
         }))}
         onChange={changeAudio}
       />
+      <button onClick={download}>download</button>
     </>
   );
 }
