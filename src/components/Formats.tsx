@@ -94,6 +94,7 @@ export function Formats({ state }: { state: State }): JSX.Element {
     <>
       <SelectPicker
         style={{ paddingRight: 10 }}
+        placement="topStart"
         cleanable={false}
         searchable={false}
         defaultValue={0}
@@ -104,6 +105,7 @@ export function Formats({ state }: { state: State }): JSX.Element {
         onChange={changeVideo}
       />
       <SelectPicker
+        placement="topStart"
         cleanable={false}
         searchable={false}
         defaultValue={0}
