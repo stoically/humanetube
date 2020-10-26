@@ -1,11 +1,10 @@
-/* eslint-disable */
-const path = require("path");
-const webpack = require("webpack");
-const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const CopyPlugin = require("copy-webpack-plugin");
+import path from "path";
+import webpack from "webpack";
+import TsconfigPathsPlugin from "tsconfig-paths-webpack-plugin";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import CopyPlugin from "copy-webpack-plugin";
 
-module.exports = {
+const config: webpack.Configuration = {
   entry: {
     background: "./src/background.ts",
     index: "./src/index.tsx",
@@ -50,6 +49,7 @@ module.exports = {
       stream: require.resolve("stream-browserify"),
       https: require.resolve("https-browserify"),
       http: require.resolve("stream-http"),
+      url: require.resolve("url"),
     },
   },
   output: {
@@ -73,3 +73,5 @@ module.exports = {
     writeToDisk: true,
   },
 };
+
+export default config;
