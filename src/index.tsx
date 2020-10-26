@@ -1,6 +1,7 @@
+import "setimmediate";
+import "rsuite/lib/styles/themes/dark/index.less";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import "setimmediate";
 import { getInfo, filterFormats } from "ytdl-core";
 import { Formats } from "./formats";
 import { State } from "./types";
@@ -49,11 +50,17 @@ function Youtube() {
 
   return (
     <div>
-      <div style={{ padding: 5 }}>
+      <div style={{ padding: 10 }}>
         <video src={state.videoSrc} controls width="100%" />
       </div>
-      <div style={{ padding: 10 }}>{state.info.videoDetails.title}</div>
-      <div style={{ padding: 5 }}>
+      <div style={{ padding: 15 }}>
+        <h5>{state.info.videoDetails.title}</h5>
+        <div style={{ paddingTop: 5 }}>
+          {state.info.videoDetails.ownerChannelName},{" "}
+          {state.info.videoDetails.publishDate}
+        </div>
+      </div>
+      <div style={{ padding: 10 }}>
         <Formats state={state} />
       </div>
     </div>

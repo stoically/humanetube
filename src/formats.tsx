@@ -1,15 +1,12 @@
 import React, { ChangeEvent, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import "setimmediate";
-import { State, SourceState } from "./types";
 import { videoFormat, downloadFromInfo } from "ytdl-core";
+import { SelectPicker } from "rsuite";
+import { State, SourceState } from "./types";
 
-export function Formats({ state }: { state: State }) {
+export function Formats({ state }: { state: State }): JSX.Element {
   const [ready, setReady] = useState(false);
   const [video, setVideo] = useState<SourceState>();
   const [audio, setAudio] = useState<SourceState>();
-
-  const { register } = useForm();
 
   function updateSourceBuffer(
     buffer: SourceBuffer,
@@ -78,10 +75,11 @@ export function Formats({ state }: { state: State }) {
     setAudio(addSourceBuffer(state.formats.audio[0]));
   }, [ready]);
 
-  async function changeVideo(event: ChangeEvent<HTMLSelectElement>) {
+  async function changeVideo(value: number) {
     if (!video) return;
 
-    const format = state.formats.video[parseInt(event.currentTarget.value)];
+    const format = state.formats.video[value];
+    console.log(format, video);
     setVideo(await switchFormat(format, video));
   }
 
@@ -93,26 +91,28 @@ export function Formats({ state }: { state: State }) {
   }
 
   return (
-    <div style={{ display: "flex" }}>
-      <div>
-        <select name="video" ref={register} onChange={changeVideo}>
-          {state.formats.video.map(({ url, qualityLabel, mimeType }, index) => (
-            <option key={url} value={index}>
-              {qualityLabel} {mimeType}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div style={{ paddingLeft: 5 }}>
-        <select name="audio" ref={register} onChange={changeAudio}>
-          {state.formats.audio.map(({ url, mimeType, audioBitrate }, index) => (
-            <option key={url} value={index}>
-              {audioBitrate}bit {mimeType}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
+    <>
+      <SelectPicker
+        style={{ paddingRight: 10 }}
+        cleanable={false}
+        searchable={false}
+        defaultValue={0}
+        data={state.formats.video.map(({ qualityLabel, mimeType }, index) => ({
+          label: `${qualityLabel} ${mimeType}`,
+          value: index,
+        }))}
+        onChange={changeVideo}
+      />
+      <SelectPicker
+        cleanable={false}
+        searchable={false}
+        defaultValue={0}
+        data={state.formats.audio.map(({ audioBitrate, mimeType }, index) => ({
+          label: `${audioBitrate}bit ${mimeType}`,
+          value: index,
+        }))}
+        onChange={changeAudio}
+      />
+    </>
   );
 }
