@@ -21,6 +21,9 @@ export function Formats({ state }: { state: State }): JSX.Element {
       reader.pause();
       buffer.appendBuffer(data);
     });
+    reader.addListener("end", () => {
+      state.mediaSource.endOfStream();
+    });
 
     function cleanup(): Promise<void> {
       return new Promise((resolve) => {

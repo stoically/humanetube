@@ -4,13 +4,15 @@ import { State } from "../types";
 import { Formats } from "./Formats";
 
 export function Youtube(): JSX.Element {
-  const id = new URL(document.location.toString()).searchParams.get("watch");
   const [state, setState] = useState<State>();
   const [error, setError] = useState<Error>();
 
   useEffect(() => {
     (async () => {
       try {
+        const id = new URL(document.location.toString()).searchParams.get(
+          "watch"
+        );
         if (!id) {
           throw new Error("Missing Video ID");
         }
