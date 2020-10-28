@@ -1,7 +1,20 @@
+import { table } from "console";
+
+const extensionUrl = browser.runtime.getURL("/");
+
 browser.webRequest.onBeforeRequest.addListener(
-  (request) => {
-    if (request.originUrl?.startsWith(browser.runtime.getURL("/"))) {
+  async (request) => {
+    console.log(request.originUrl);
+    if (request.originUrl?.startsWith(extensionUrl)) {
       return {};
+    } else {
+      const tab = await browser.tabs.get(request.tabId);
+      if (tab.openerTabId) {
+        const openerTab = await browser.tabs.get(tab.openerTabId);
+        if (openerTab.url?.startsWith(extensionUrl)) {
+          return {};
+        }
+      }
     }
 
     const url = new URL(request.url);
