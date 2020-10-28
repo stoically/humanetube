@@ -1,9 +1,9 @@
 import React, { ChangeEvent, useEffect, useState } from "react";
 import { videoFormat, downloadFromInfo } from "ytdl-core";
 import { SelectPicker } from "rsuite";
-import { State, SourceState } from "../types";
+import { YtdlState, SourceState } from "../types";
 
-export function Formats({ state }: { state: State }): JSX.Element {
+export function YtdlFormats({ state }: { state: YtdlState }): JSX.Element {
   const [ready, setReady] = useState(false);
   const [video, setVideo] = useState<SourceState>();
   const [audio, setAudio] = useState<SourceState>();

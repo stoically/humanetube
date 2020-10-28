@@ -1,5 +1,9 @@
 browser.webRequest.onBeforeRequest.addListener(
   (request) => {
+    if (request.originUrl?.startsWith(browser.runtime.getURL("/"))) {
+      return {};
+    }
+
     const url = new URL(request.url);
     let id;
 

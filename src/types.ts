@@ -6,12 +6,14 @@ declare global {
   }
 }
 
-export interface State {
+export interface Formats {
+  video: videoFormat[];
+  audio: videoFormat[];
+}
+
+export interface YtdlState {
   info: videoInfo;
-  formats: {
-    video: videoFormat[];
-    audio: videoFormat[];
-  };
+  formats: Formats;
   mediaSource: MediaSource;
   videoSrc: string;
 }
