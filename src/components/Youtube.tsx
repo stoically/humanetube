@@ -74,7 +74,7 @@ export function Youtube(): JSX.Element {
     <div>
       {state.error ? (
         state.id ? (
-          <div style={{ padding: 10 }}>
+          <div>
             <div>
               <div className="video-container">
                 <iframe
@@ -93,18 +93,18 @@ export function Youtube(): JSX.Element {
           state.error.toString()
         )
       ) : state.ytdl ? (
-        <div style={{ padding: 10 }}>
-          <div style={{ paddingBottom: 10 }}>
+        <div>
+          <div>
             <video src={state.ytdl?.videoSrc} controls width="100%" />
           </div>
-          <div style={{ padding: 5 }}>
+          <div style={{ padding: 15 }}>
             <h5>{state.info?.videoDetails.title}</h5>
-            <div style={{ paddingTop: 5 }}>
+            <div>
               {state.info?.videoDetails.ownerChannelName},{" "}
               {state.info?.videoDetails.publishDate}
             </div>
           </div>
-          <div style={{ paddingTop: 10 }}>
+          <div style={{ padding: 10 }}>
             <YtdlFormats state={state.ytdl} />
             <span style={{ paddingLeft: 10 }}>
               <Button
