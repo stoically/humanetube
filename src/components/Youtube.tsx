@@ -7,8 +7,8 @@ import { Button } from "rsuite";
 export function Youtube(): JSX.Element {
   const [state, setState] = useState<{
     loading: boolean;
-    error?: Error;
     id?: string;
+    error?: string;
     info?: videoInfo;
     ytdl?: YtdlState;
   }>({ loading: true });
@@ -19,7 +19,10 @@ export function Youtube(): JSX.Element {
         "watch"
       );
       if (!id) {
-        setState({ loading: false, error: new Error("Missing Video ID") });
+        setState({
+          loading: false,
+          error: "Unrecoverable: No Youtube Video ID found",
+        });
         return;
       }
 
@@ -33,8 +36,10 @@ export function Youtube(): JSX.Element {
         if (!video.length && !audio.length) {
           setState({
             loading: false,
-            error: new Error("no valid video formats found"),
             id,
+            info,
+            error:
+              "no valid video formats found, using regular youtube embedding",
           });
           return;
         }
@@ -42,8 +47,10 @@ export function Youtube(): JSX.Element {
         if (info.videoDetails.isLiveContent) {
           setState({
             loading: false,
-            error: new Error("livestreams currently not supported"),
             id,
+            info,
+            error:
+              "livestreams currently not supported, using regular youtube embedding",
           });
           return;
         }
@@ -71,42 +78,38 @@ export function Youtube(): JSX.Element {
   }
 
   return (
-    <div>
-      {state.error ? (
-        state.id ? (
-          <div>
-            <div>
-              <div className="video-container">
-                <iframe
-                  src={`https://www.youtube-nocookie.com/embed/${state.id}?rel=0`}
-                  frameBorder="0"
-                  allowFullScreen
-                ></iframe>
-              </div>
-            </div>
-            <div style={{ padding: 10 }}>
-              {state.error.toString()}, falling back to regular youtube
-              embedding
-            </div>
-          </div>
+    <>
+      <div className="theater">
+        {!state.error && state.ytdl ? (
+          <video src={state.ytdl.videoSrc} controls />
         ) : (
-          state.error.toString()
-        )
-      ) : state.ytdl ? (
-        <div>
-          <div>
-            <video src={state.ytdl?.videoSrc} controls width="100%" />
-          </div>
+          state.id && (
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${state.id}?rel=0`}
+              frameBorder="0"
+              allowFullScreen
+            ></iframe>
+          )
+        )}
+      </div>
+
+      <div>
+        {state.info && (
           <div style={{ padding: 15 }}>
             <h5>{state.info?.videoDetails.title}</h5>
-            <div>
+            <div style={{ paddingTop: 5 }}>
               {state.info?.videoDetails.ownerChannelName},{" "}
               {state.info?.videoDetails.publishDate}
             </div>
           </div>
-          <div style={{ padding: 10 }}>
-            <YtdlFormats state={state.ytdl} />
-            <span style={{ paddingLeft: 10 }}>
+        )}
+        {state.error && (
+          <div style={{ paddingLeft: 15 }}>{state.error.toString()}</div>
+        )}
+        <div style={{ padding: 10 }}>
+          {state.ytdl && <YtdlFormats state={state.ytdl} />}
+          {state.id && (
+            <span style={{ paddingLeft: state.ytdl ? 10 : 5 }}>
               <Button
                 onClick={() =>
                   browser.tabs.create({
@@ -118,11 +121,9 @@ export function Youtube(): JSX.Element {
                 Broken? Open on YouTube
               </Button>
             </span>
-          </div>
+          )}
         </div>
-      ) : (
-        <div>Something went wrong</div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }
