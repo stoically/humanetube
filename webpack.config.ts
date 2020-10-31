@@ -42,6 +42,9 @@ const config: webpack.Configuration = {
   optimization: {
     minimize: false,
   },
+  performance: {
+    hints: false,
+  },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
     plugins: [new TsconfigPathsPlugin()],
@@ -68,10 +71,6 @@ const config: webpack.Configuration = {
       patterns: ["README.md", "LICENSE", "src/manifest.json"],
     }),
   ],
-  devServer: {
-    inline: false,
-    writeToDisk: true,
-  },
 };
 
 export default config;
