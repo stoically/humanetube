@@ -78,8 +78,8 @@ class WebRequest {
     return {};
   }
 
-  debug(message: string, ...args: unknown[]) {
-    console.log(`[request ${this.request.requestId}] ${message}`, ...args);
+  debug(...args: unknown[]) {
+    console.log(`[request ${this.request.requestId}]`, ...args);
   }
 }
 
