@@ -4,6 +4,14 @@ Distraction- and rabbit hole-free YouTube viewing experience, **because we need 
 
 ## Development
 
+### Requirements
+
+- NodeJS LTS
+- Firefox
+- https://docs.cypress.io/guides/getting-started/installing-cypress.html#System-requirements
+
+### Watch
+
 ```
 npm install
 npm run dev

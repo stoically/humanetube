@@ -7,6 +7,7 @@
     "https://*.youtube.com/*",
     "https://youtu.be/*",
     "https://*.googlevideo.com/*",
+    "http://localhost/*",
     "tabs",
     "webRequest",
     "webRequestBlocking"
@@ -14,6 +15,7 @@
   "background": {
     "scripts": ["background.js"]
   },
+  "web_accessible_resources": ["index.html", "index.js"],
   "applications": {
     "gecko": {
       "id": "@social-focus",
