@@ -6,6 +6,7 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "jsx": "react",
+    "types": ["cypress", "firefox-webext-browser"],
     "paths": {
       "~/*": ["src/*"]
     }
