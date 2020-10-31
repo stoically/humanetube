@@ -118,11 +118,8 @@ export function Youtube(): JSX.Element {
           {state.id && (
             <span style={{ paddingLeft: state.formats ? 10 : 5 }}>
               <Button
-                onClick={() =>
-                  browser.tabs.create({
-                    url: `https://www.youtube.com/watch?v=${state.id}`,
-                  })
-                }
+                href={`https://www.youtube.com/watch?v=${state.id}`}
+                target="_blank"
                 appearance="ghost"
               >
                 Broken? Open on YouTube
