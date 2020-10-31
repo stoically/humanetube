@@ -1,16 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getInfo, filterFormats, videoInfo } from "ytdl-core";
 import { YtdlFormats } from "./YtdlFormats";
-import { YtdlState } from "../types";
+import { Formats } from "../types";
 import { Button } from "rsuite";
 
 export function Youtube(): JSX.Element {
+  const videoElement = useRef<HTMLVideoElement>(null);
   const [state, setState] = useState<{
     loading: boolean;
     id?: string;
     error?: string;
     info?: videoInfo;
-    ytdl?: YtdlState;
+    formats?: Formats;
+    mediaSource?: MediaSource;
+    videoSrc?: string;
   }>({ loading: true });
 
   useEffect(() => {
@@ -21,7 +24,7 @@ export function Youtube(): JSX.Element {
       if (!id) {
         setState({
           loading: false,
-          error: "Unrecoverable: No Youtube Video ID found",
+          error: "Unrecoverable error: No Youtube Video ID found",
         });
         return;
       }
@@ -60,12 +63,9 @@ export function Youtube(): JSX.Element {
           loading: false,
           id,
           info,
-          ytdl: {
-            info,
-            mediaSource,
-            formats: { audio, video },
-            videoSrc: URL.createObjectURL(mediaSource),
-          },
+          mediaSource,
+          formats: { audio, video },
+          videoSrc: URL.createObjectURL(mediaSource),
         });
       } catch (error) {
         setState({ loading: false, error, id });
@@ -80,8 +80,8 @@ export function Youtube(): JSX.Element {
   return (
     <>
       <div className="theater">
-        {!state.error && state.ytdl ? (
-          <video src={state.ytdl.videoSrc} controls />
+        {!state.error && state.videoSrc ? (
+          <video ref={videoElement} src={state.videoSrc} controls />
         ) : (
           state.id && (
             <iframe
@@ -96,10 +96,10 @@ export function Youtube(): JSX.Element {
       <div>
         {state.info && (
           <div style={{ padding: 15 }}>
-            <h5>{state.info?.videoDetails.title}</h5>
+            <h5>{state.info.videoDetails.title}</h5>
             <div style={{ paddingTop: 5 }}>
-              {state.info?.videoDetails.ownerChannelName},{" "}
-              {state.info?.videoDetails.publishDate}
+              {state.info.videoDetails.ownerChannelName},{" "}
+              {state.info.videoDetails.publishDate}
             </div>
           </div>
         )}
@@ -107,9 +107,16 @@ export function Youtube(): JSX.Element {
           <div style={{ paddingLeft: 15 }}>{state.error.toString()}</div>
         )}
         <div style={{ padding: 10 }}>
-          {state.ytdl && <YtdlFormats state={state.ytdl} />}
+          {state.info && state.formats && state.mediaSource && (
+            <YtdlFormats
+              info={state.info}
+              formats={state.formats}
+              mediaSource={state.mediaSource}
+              videoElement={videoElement}
+            />
+          )}
           {state.id && (
-            <span style={{ paddingLeft: state.ytdl ? 10 : 5 }}>
+            <span style={{ paddingLeft: state.formats ? 10 : 5 }}>
               <Button
                 onClick={() =>
                   browser.tabs.create({

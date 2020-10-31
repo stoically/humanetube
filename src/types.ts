@@ -1,4 +1,4 @@
-import { videoInfo, videoFormat } from "ytdl-core";
+import { videoFormat, videoInfo } from "ytdl-core";
 
 declare global {
   interface SourceBuffer {

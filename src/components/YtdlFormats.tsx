@@ -1,12 +1,35 @@
-import React, { ChangeEvent, useEffect, useState } from "react";
-import { videoFormat, downloadFromInfo } from "ytdl-core";
+import React, { ChangeEvent, RefObject, useEffect, useState } from "react";
+import { videoFormat, downloadFromInfo, videoInfo } from "ytdl-core";
 import { SelectPicker } from "rsuite";
-import { YtdlState, SourceState } from "../types";
+import { SourceState, Formats } from "../types";
 
-export function YtdlFormats({ state }: { state: YtdlState }): JSX.Element {
+export function YtdlFormats({
+  info,
+  formats,
+  mediaSource,
+  videoElement,
+}: {
+  info: videoInfo;
+  formats: Formats;
+  mediaSource: MediaSource;
+  videoElement: RefObject<HTMLVideoElement>;
+}): JSX.Element {
   const [ready, setReady] = useState(false);
   const [video, setVideo] = useState<SourceState>();
   const [audio, setAudio] = useState<SourceState>();
+
+  function addSourceBuffer(format: videoFormat): SourceState {
+    const buffer = mediaSource.addSourceBuffer(format.mimeType!);
+    const reader = downloadFromInfo(info, { format });
+    return updateSourceBuffer(buffer, reader);
+  }
+
+  async function switchFormat(format: videoFormat, source: SourceState) {
+    await source.cleanup();
+    const reader = downloadFromInfo(info, { format });
+    source.buffer.changeType(format.mimeType!);
+    return updateSourceBuffer(source.buffer, reader);
+  }
 
   function updateSourceBuffer(
     buffer: SourceBuffer,
@@ -22,7 +45,7 @@ export function YtdlFormats({ state }: { state: YtdlState }): JSX.Element {
       buffer.appendBuffer(data);
     });
     reader.addListener("end", () => {
-      state.mediaSource.endOfStream();
+      mediaSource.endOfStream();
     });
 
     function cleanup(): Promise<void> {
@@ -49,49 +72,36 @@ export function YtdlFormats({ state }: { state: YtdlState }): JSX.Element {
     return { buffer, reader, cleanup };
   }
 
-  function addSourceBuffer(format: videoFormat): SourceState {
-    const buffer = state.mediaSource.addSourceBuffer(format.mimeType!);
-    const reader = downloadFromInfo(state.info, { format });
-    return updateSourceBuffer(buffer, reader);
+  async function changeVideoFormat(value: number) {
+    if (!video) return;
+
+    const format = formats.video[value];
+    console.log(format, video);
+    setVideo(await switchFormat(format, video));
   }
 
-  async function switchFormat(format: videoFormat, source: SourceState) {
-    await source.cleanup();
-    const reader = downloadFromInfo(state.info, { format });
-    source.buffer.changeType(format.mimeType!);
-    return updateSourceBuffer(source.buffer, reader);
+  async function changeAudioFormat(event: ChangeEvent<HTMLSelectElement>) {
+    if (!audio) return;
+
+    const format = formats.audio[parseInt(event.currentTarget.value)];
+    setAudio(await switchFormat(format, audio));
   }
 
   useEffect(() => {
-    state.mediaSource.addEventListener("sourceopen", () => {
+    mediaSource.addEventListener("sourceopen", () => {
       setReady(true);
     });
 
-    state.mediaSource.addEventListener("sourceclose", console.log);
-    state.mediaSource.addEventListener("sourceended", console.log);
+    mediaSource.addEventListener("sourceclose", console.log);
+    mediaSource.addEventListener("sourceended", console.log);
   }, []);
 
   useEffect(() => {
     if (!ready) return;
 
-    setVideo(addSourceBuffer(state.formats.video[0]));
-    setAudio(addSourceBuffer(state.formats.audio[0]));
+    setVideo(addSourceBuffer(formats.video[0]));
+    setAudio(addSourceBuffer(formats.audio[0]));
   }, [ready]);
-
-  async function changeVideo(value: number) {
-    if (!video) return;
-
-    const format = state.formats.video[value];
-    console.log(format, video);
-    setVideo(await switchFormat(format, video));
-  }
-
-  async function changeAudio(event: ChangeEvent<HTMLSelectElement>) {
-    if (!audio) return;
-
-    const format = state.formats.audio[parseInt(event.currentTarget.value)];
-    setAudio(await switchFormat(format, audio));
-  }
 
   return (
     <>
@@ -101,22 +111,22 @@ export function YtdlFormats({ state }: { state: YtdlState }): JSX.Element {
         cleanable={false}
         searchable={false}
         defaultValue={0}
-        data={state.formats.video.map(({ qualityLabel, mimeType }, index) => ({
+        data={formats.video.map(({ qualityLabel, mimeType }, index) => ({
           label: `${qualityLabel} ${mimeType}`,
           value: index,
         }))}
-        onChange={changeVideo}
+        onChange={changeVideoFormat}
       />
       <SelectPicker
         placement="topStart"
         cleanable={false}
         searchable={false}
         defaultValue={0}
-        data={state.formats.audio.map(({ audioBitrate, mimeType }, index) => ({
+        data={formats.audio.map(({ audioBitrate, mimeType }, index) => ({
           label: `${audioBitrate}bit ${mimeType}`,
           value: index,
         }))}
-        onChange={changeAudio}
+        onChange={changeAudioFormat}
       />
     </>
   );
