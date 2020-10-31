@@ -52,14 +52,5 @@
   },
   "prettier": {
     "trailingComma": "es5"
-  },
-  "targets": {
-    "browser": {
-      "engines": {
-        "browsers": [
-          "Firefox > 80"
-        ]
-      }
-    }
   }
 }
