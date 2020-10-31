@@ -11,13 +11,6 @@ export interface Formats {
   audio: videoFormat[];
 }
 
-export interface YtdlState {
-  info: videoInfo;
-  formats: Formats;
-  mediaSource: MediaSource;
-  videoSrc: string;
-}
-
 export interface SourceState {
   buffer: SourceBuffer;
   reader: NodeJS.ReadableStream;
