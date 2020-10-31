@@ -53,6 +53,9 @@ class WebRequest {
 
   async handle() {
     this.debug("handling", this.request);
+    this.debug("url", this.url);
+    this.debug("tab", this.tab);
+    this.debug("openerTab", this.openerTab);
 
     if (this.originatedFromExtension()) {
       return {};
