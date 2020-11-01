@@ -53,6 +53,7 @@ const config: webpack.Configuration = {
       https: require.resolve("https-browserify"),
       http: require.resolve("stream-http"),
       url: require.resolve("url"),
+      querystring: require.resolve("querystring-es3"),
     },
   },
   output: {
