@@ -4,21 +4,21 @@ interface Props {
   mediasource: MediaSource;
   videoElement: HTMLVideoElement;
   type: string;
-  reader: NodeJS.ReadableStream;
+  readerFn: () => NodeJS.ReadableStream;
 }
 
 interface Returns {
   readerEnd: boolean;
-  changeType({ type, reader }: ChangeTypeArgs): void;
+  changeType({ type, readerFn }: ChangeTypeArgs): void;
 }
 
 interface ChangeTypeArgs {
   type: string;
-  reader: NodeJS.ReadableStream;
+  readerFn: () => NodeJS.ReadableStream;
 }
 
 interface StreamArgs {
-  reader: NodeJS.ReadableStream;
+  readerFn: () => NodeJS.ReadableStream;
   buffer: SourceBuffer;
 }
 
@@ -36,67 +36,115 @@ export function useSourceBuffer({
   mediasource,
   videoElement,
   type,
-  reader,
+  readerFn,
 }: Props): Returns {
   const [state, setState] = useState<SourceState>();
   const [readerEnd, setReaderEnd] = useState(false);
 
-  async function changeType({ type, reader }: ChangeTypeArgs) {
+  async function changeType({ type, readerFn }: ChangeTypeArgs) {
     if (!state) throw new Error("buffer not ready");
 
     await state.cleanup();
     state.buffer.changeType(type);
     setReaderEnd(false);
-    setState(stream({ reader, buffer: state.buffer }));
+    setState(stream({ readerFn, buffer: state.buffer }));
   }
 
-  function stream({ reader, buffer }: StreamArgs) {
+  function stream({ readerFn, buffer }: StreamArgs) {
+    const reader = readerFn();
     let buffering = true;
 
     function totalBuffered() {
+      if (!buffer.buffered.length) return 0;
+      return buffer.buffered.end(0) - buffer.buffered.start(0);
+    }
+
+    function forwardBuffer() {
+      if (
+        !buffer.buffered.length ||
+        videoElement.currentTime >= buffer.buffered.end(0)
+      ) {
+        return 0;
+      }
+
       return buffer.buffered.end(0) - videoElement.currentTime;
     }
 
-    function prevBuffered() {
-      return videoElement.currentTime - buffer.buffered.start(0);
+    function previousBuffered() {
+      if (!buffer.buffered.length) return 0;
+
+      if (videoElement.currentTime > buffer.buffered.end(0)) {
+        return totalBuffered();
+      } else {
+        return videoElement.currentTime - buffer.buffered.start(0);
+      }
     }
 
-    async function timeupdate() {
-      if (!buffer.buffered.length) return;
+    function bufferAhead() {
+      if (!buffer.buffered.length) return false;
 
-      if (prevBuffered() > BUFFER_LOW) {
-        await removePreviousBuffer();
+      return buffer.buffered.start(0) > videoElement.currentTime;
+    }
+
+    let checkingBuffer = false;
+    async function bufferCheck() {
+      if (checkingBuffer) return;
+      if (!buffer.buffered.length) return;
+      if (buffer.updating) return;
+      checkingBuffer = true;
+
+      if (bufferAhead()) {
+        // this happens when seeking to a position we already removed previously
+        await cleanup();
+        if (buffer.buffered.length) {
+          await removeBuffer(buffer.buffered.start(0), buffer.buffered.end(0));
+        }
+        setState(stream({ readerFn, buffer }));
+        return;
       }
 
-      if (!buffering && totalBuffered() < BUFFER_LOW) {
+      if (!buffering && previousBuffered() > BUFFER_LOW) {
+        const start = buffer.buffered.start(0);
+        const end = buffer.buffered.end(0);
+        const remove = start + BUFFER_REMOVE;
+        await removeBuffer(start, remove > end ? end : remove);
+      }
+
+      if (!buffering && forwardBuffer() < BUFFER_LOW) {
         buffering = true;
         reader.resume();
       }
+
+      checkingBuffer = false;
     }
-    videoElement.addEventListener("timeupdate", timeupdate);
+    videoElement.addEventListener("timeupdate", bufferCheck);
+    videoElement.addEventListener("seeking", bufferCheck);
 
     function updateendListener() {
-      if (totalBuffered() < BUFFER_HIGH) {
-        buffering = false;
+      if (forwardBuffer() < BUFFER_HIGH) {
         reader.resume();
+      } else {
+        buffering = false;
       }
     }
 
-    function removePreviousBuffer() {
+    function removeBuffer(start: number, end: number) {
       return new Promise((resolve) => {
+        if (!buffer.buffered.length) return;
+
         function updateendListener() {
           buffer.removeEventListener("updateend", updateendListener);
           resolve();
         }
         buffer.addEventListener("updateend", updateendListener);
-        const start = buffer.buffered.start(0);
-        buffer.remove(start, start + BUFFER_REMOVE);
+        buffer.remove(start, end);
       });
     }
 
     buffer.addEventListener("updateend", updateendListener);
     buffer.addEventListener("error", console.error);
     reader.addListener("data", (data) => {
+      buffering = true;
       reader.pause();
       try {
         buffer.appendBuffer(data);
@@ -113,11 +161,12 @@ export function useSourceBuffer({
 
     function cleanup(): Promise<void> {
       return new Promise((resolve) => {
-        videoElement.removeEventListener("timeupdate", timeupdate);
+        reader.pause();
+        videoElement.removeEventListener("timeupdate", bufferCheck);
+        videoElement.removeEventListener("seeking", bufferCheck);
         buffer.removeEventListener("updateend", updateendListener);
         buffer.removeEventListener("error", console.error);
         reader.removeAllListeners();
-        reader.pause();
 
         if (buffer.updating) {
           function abortListener() {
@@ -139,7 +188,7 @@ export function useSourceBuffer({
   useEffect(() => {
     mediasource.addEventListener("sourceopen", () => {
       const buffer = mediasource.addSourceBuffer(type);
-      setState(stream({ reader, buffer }));
+      setState(stream({ readerFn, buffer }));
     });
   }, []);
 

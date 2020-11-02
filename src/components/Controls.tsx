@@ -21,14 +21,14 @@ export function Controls({
     mediasource,
     videoElement,
     type: formats.video[0].mimeType,
-    reader: downloadFromInfo(info, { format: formats.video[0] }),
+    readerFn: () => downloadFromInfo(info, { format: formats.video[0] }),
   });
 
   const audio = useSourceBuffer({
     mediasource,
     videoElement,
     type: formats.audio[0].mimeType,
-    reader: downloadFromInfo(info, { format: formats.audio[0] }),
+    readerFn: () => downloadFromInfo(info, { format: formats.audio[0] }),
   });
 
   useEffect(() => {
@@ -58,7 +58,8 @@ export function Controls({
         onChange={(value) =>
           video.changeType({
             type: formats.video[value].mimeType,
-            reader: downloadFromInfo(info, { format: formats.video[value] }),
+            readerFn: () =>
+              downloadFromInfo(info, { format: formats.video[value] }),
           })
         }
       />
@@ -75,7 +76,8 @@ export function Controls({
         onChange={(value) =>
           audio.changeType({
             type: formats.audio[value].mimeType,
-            reader: downloadFromInfo(info, { format: formats.audio[value] }),
+            readerFn: () =>
+              downloadFromInfo(info, { format: formats.audio[value] }),
           })
         }
       />
