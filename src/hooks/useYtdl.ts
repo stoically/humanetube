@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useErrorHandler } from "react-error-boundary";
 import * as ytdl from "ytdl-core";
-import { Formats } from "../types";
+import { Formats, VideoFormat } from "../types";
 
 interface State {
   loading: boolean;
@@ -22,8 +22,12 @@ export function useYtdl(id: string): State {
         console.log("[debug] ytdl.getInfo", info);
         document.title = info.videoDetails.title;
 
-        const video = ytdl.filterFormats(info.formats, "videoonly");
-        const audio = ytdl.filterFormats(info.formats, "audioonly");
+        const video = ytdl
+          .filterFormats(info.formats, "videoonly")
+          .filter((format) => !!format.mimeType) as VideoFormat[];
+        const audio = ytdl
+          .filterFormats(info.formats, "audioonly")
+          .filter((format) => !!format.mimeType) as VideoFormat[];
 
         let embed;
         if (!video.length && !audio.length) {

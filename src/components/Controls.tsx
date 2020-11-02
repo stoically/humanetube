@@ -13,40 +13,32 @@ interface Props {
 
 export function Controls({ videoRef, info, formats }: Props): JSX.Element {
   const mediasource = useMediaSource(videoRef);
-  const video = useSourceBuffer(mediasource);
-  const audio = useSourceBuffer(mediasource);
 
-  async function changeVideoFormat(value: number) {
-    if (!video || !formats) return;
+  const video = useSourceBuffer({
+    mediasource,
+    videoRef,
+    type: formats.video[0].mimeType,
+    reader: downloadFromInfo(info, { format: formats.video[0] }),
+  });
 
-    const format = formats.video[value];
-    const reader = downloadFromInfo(info, { format });
-    video.change(format.mimeType!, reader);
-  }
-
-  async function changeAudioFormat(value: number) {
-    if (!audio || !formats) return;
-
-    const format = formats.audio[value];
-    const reader = downloadFromInfo(info, { format });
-    audio.change(format.mimeType!, reader);
-  }
+  const audio = useSourceBuffer({
+    mediasource,
+    videoRef,
+    type: formats.audio[0].mimeType,
+    reader: downloadFromInfo(info, { format: formats.audio[0] }),
+  });
 
   useEffect(() => {
-    if (!mediasource) return;
+    mediasource.addEventListener("sourceopen", console.log);
+    mediasource.addEventListener("sourceclose", console.log);
+    mediasource.addEventListener("sourceended", console.log);
+  }, []);
 
-    const videoFormat = formats.video[0];
-    video.add(
-      videoFormat.mimeType!,
-      downloadFromInfo(info, { format: videoFormat })
-    );
-
-    const audioFormat = formats.audio[0];
-    audio.add(
-      audioFormat.mimeType!,
-      downloadFromInfo(info, { format: audioFormat })
-    );
-  }, [mediasource]);
+  useEffect(() => {
+    if (video.readerEnd && audio.readerEnd) {
+      mediasource.endOfStream();
+    }
+  }, [video.readerEnd, audio.readerEnd]);
 
   return (
     <>
@@ -60,7 +52,12 @@ export function Controls({ videoRef, info, formats }: Props): JSX.Element {
           label: `${qualityLabel} ${mimeType}`,
           value: index,
         }))}
-        onChange={changeVideoFormat}
+        onChange={(value) =>
+          video.changeType({
+            type: formats.video[value].mimeType,
+            reader: downloadFromInfo(info, { format: formats.video[value] }),
+          })
+        }
       />
       <SelectPicker
         style={{ paddingRight: 10 }}
@@ -72,7 +69,12 @@ export function Controls({ videoRef, info, formats }: Props): JSX.Element {
           label: `${audioBitrate}bit ${mimeType}`,
           value: index,
         }))}
-        onChange={changeAudioFormat}
+        onChange={(value) =>
+          audio.changeType({
+            type: formats.audio[value].mimeType,
+            reader: downloadFromInfo(info, { format: formats.audio[value] }),
+          })
+        }
       />
     </>
   );

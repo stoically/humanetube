@@ -2,17 +2,16 @@ import { videoFormat } from "ytdl-core";
 
 declare global {
   interface SourceBuffer {
+    // https://developer.mozilla.org/en-US/docs/Web/API/SourceBuffer/changeType
     changeType: (type: string) => void;
   }
 }
 
-export interface Formats {
-  video: videoFormat[];
-  audio: videoFormat[];
+export interface VideoFormat extends videoFormat {
+  mimeType: string;
 }
 
-export interface SourceState {
-  buffer: SourceBuffer;
-  reader: NodeJS.ReadableStream;
-  cleanup: () => Promise<void>;
+export interface Formats {
+  video: VideoFormat[];
+  audio: VideoFormat[];
 }

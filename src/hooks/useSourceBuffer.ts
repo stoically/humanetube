@@ -1,22 +1,52 @@
-import { useState } from "react";
-import { SourceState } from "~/types";
+import { RefObject, useEffect, useState } from "react";
 
-export function useSourceBuffer(mediasource?: MediaSource) {
+interface Props {
+  mediasource: MediaSource;
+  videoRef: RefObject<HTMLVideoElement>;
+  type: string;
+  reader: NodeJS.ReadableStream;
+}
+
+interface Returns {
+  readerEnd: boolean;
+  changeType({ type, reader }: ChangeTypeArgs): void;
+}
+
+interface ChangeTypeArgs {
+  type: string;
+  reader: NodeJS.ReadableStream;
+}
+
+interface StreamArgs {
+  reader: NodeJS.ReadableStream;
+  buffer: SourceBuffer;
+}
+
+interface SourceState {
+  buffer: SourceBuffer;
+  reader: NodeJS.ReadableStream;
+  cleanup: () => Promise<void>;
+}
+
+export function useSourceBuffer({
+  mediasource,
+  videoRef,
+  type,
+  reader,
+}: Props): Returns {
   const [state, setState] = useState<SourceState>();
+  const [readerEnd, setReaderEnd] = useState(false);
 
-  function add(format: string, reader: NodeJS.ReadableStream) {
-    const buffer = mediasource!.addSourceBuffer(format);
-    setState(stream(buffer, reader));
+  async function changeType({ type, reader }: ChangeTypeArgs) {
+    if (!state) throw new Error("buffer not ready");
+
+    await state.cleanup();
+    state.buffer.changeType(type);
+    setReaderEnd(false);
+    setState(stream({ reader, buffer: state.buffer }));
   }
 
-  async function change(format: string, reader: NodeJS.ReadableStream) {
-    await state!.cleanup();
-
-    state!.buffer.changeType(format);
-    setState(stream(state!.buffer, reader));
-  }
-
-  function stream(buffer: SourceBuffer, reader: NodeJS.ReadableStream) {
+  function stream({ reader, buffer }: StreamArgs) {
     function updateendListener() {
       reader.resume();
     }
@@ -26,9 +56,9 @@ export function useSourceBuffer(mediasource?: MediaSource) {
       reader.pause();
       buffer.appendBuffer(data);
     });
-    // reader.addListener("end", () => {
-    //   mediasource!.endOfStream();
-    // });
+    reader.addListener("end", () => {
+      setReaderEnd(true);
+    });
 
     function cleanup(): Promise<void> {
       return new Promise((resolve) => {
@@ -51,8 +81,15 @@ export function useSourceBuffer(mediasource?: MediaSource) {
       });
     }
 
-    return { buffer, reader, cleanup };
+    return { buffer, reader, readerEnd: false, cleanup };
   }
 
-  return { add, change };
+  useEffect(() => {
+    mediasource.addEventListener("sourceopen", () => {
+      const buffer = mediasource.addSourceBuffer(type);
+      setState(stream({ reader, buffer }));
+    });
+  }, []);
+
+  return { changeType, readerEnd };
 }
