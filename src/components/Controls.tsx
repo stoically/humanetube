@@ -1,29 +1,32 @@
-import React, { RefObject, useEffect } from "react";
+import React, { useEffect } from "react";
 import { downloadFromInfo, videoInfo } from "ytdl-core";
 import { SelectPicker } from "rsuite";
 import { Formats } from "~/types";
-import { useMediaSource } from "~/hooks/useMediaSource";
 import { useSourceBuffer } from "~/hooks/useSourceBuffer";
 
 interface Props {
-  videoRef: RefObject<HTMLVideoElement>;
+  mediasource: MediaSource;
+  videoElement: HTMLVideoElement;
   info: videoInfo;
   formats: Formats;
 }
 
-export function Controls({ videoRef, info, formats }: Props): JSX.Element {
-  const mediasource = useMediaSource(videoRef);
-
+export function Controls({
+  mediasource,
+  videoElement,
+  info,
+  formats,
+}: Props): JSX.Element {
   const video = useSourceBuffer({
     mediasource,
-    videoRef,
+    videoElement,
     type: formats.video[0].mimeType,
     reader: downloadFromInfo(info, { format: formats.video[0] }),
   });
 
   const audio = useSourceBuffer({
     mediasource,
-    videoRef,
+    videoElement,
     type: formats.audio[0].mimeType,
     reader: downloadFromInfo(info, { format: formats.audio[0] }),
   });

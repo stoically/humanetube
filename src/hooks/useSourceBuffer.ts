@@ -1,8 +1,8 @@
-import { RefObject, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Props {
   mediasource: MediaSource;
-  videoRef: RefObject<HTMLVideoElement>;
+  videoElement: HTMLVideoElement;
   type: string;
   reader: NodeJS.ReadableStream;
 }
@@ -28,9 +28,13 @@ interface SourceState {
   cleanup: () => Promise<void>;
 }
 
+const BUFFER_HIGH = 60; // secs
+const BUFFER_LOW = 30; // secs
+const BUFFER_REMOVE = 15; // secs
+
 export function useSourceBuffer({
   mediasource,
-  videoRef,
+  videoElement,
   type,
   reader,
 }: Props): Returns {
@@ -47,14 +51,61 @@ export function useSourceBuffer({
   }
 
   function stream({ reader, buffer }: StreamArgs) {
-    function updateendListener() {
-      reader.resume();
+    let buffering = true;
+
+    function totalBuffered() {
+      return buffer.buffered.end(0) - videoElement.currentTime;
     }
+
+    function prevBuffered() {
+      return videoElement.currentTime - buffer.buffered.start(0);
+    }
+
+    async function timeupdate() {
+      if (!buffer.buffered.length) return;
+
+      if (prevBuffered() > BUFFER_LOW) {
+        await removePreviousBuffer();
+      }
+
+      if (!buffering && totalBuffered() < BUFFER_LOW) {
+        buffering = true;
+        reader.resume();
+      }
+    }
+    videoElement.addEventListener("timeupdate", timeupdate);
+
+    function updateendListener() {
+      if (totalBuffered() < BUFFER_HIGH) {
+        buffering = false;
+        reader.resume();
+      }
+    }
+
+    function removePreviousBuffer() {
+      return new Promise((resolve) => {
+        function updateendListener() {
+          buffer.removeEventListener("updateend", updateendListener);
+          resolve();
+        }
+        buffer.addEventListener("updateend", updateendListener);
+        const start = buffer.buffered.start(0);
+        buffer.remove(start, start + BUFFER_REMOVE);
+      });
+    }
+
     buffer.addEventListener("updateend", updateendListener);
     buffer.addEventListener("error", console.error);
     reader.addListener("data", (data) => {
       reader.pause();
-      buffer.appendBuffer(data);
+      try {
+        buffer.appendBuffer(data);
+      } catch (error) {
+        // TODO: properly handle error.name === "QuotaExceededError"
+        alert(error.toString());
+        console.error(error);
+        throw error;
+      }
     });
     reader.addListener("end", () => {
       setReaderEnd(true);
@@ -62,6 +113,7 @@ export function useSourceBuffer({
 
     function cleanup(): Promise<void> {
       return new Promise((resolve) => {
+        videoElement.removeEventListener("timeupdate", timeupdate);
         buffer.removeEventListener("updateend", updateendListener);
         buffer.removeEventListener("error", console.error);
         reader.removeAllListeners();

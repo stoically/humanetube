@@ -3,7 +3,7 @@ import "rsuite/lib/styles/themes/dark/index.less";
 import React from "react";
 import ReactDOM from "react-dom";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
-import { YouTube } from "./components/YouTube";
+import { Theater } from "./components/Theater";
 
 function ErrorFallback({ error }: FallbackProps) {
   return (
@@ -16,7 +16,7 @@ function ErrorFallback({ error }: FallbackProps) {
 
 const App = (
   <ErrorBoundary FallbackComponent={ErrorFallback}>
-    <YouTube />
+    <Theater />
   </ErrorBoundary>
 );
 
