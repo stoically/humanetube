@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useErrorHandler } from "react-error-boundary";
 import * as ytdl from "ytdl-core";
 import { Formats, VideoFormat } from "../types";
 
@@ -9,15 +8,16 @@ interface State {
   embed?: string;
   info?: ytdl.videoInfo;
   formats?: Formats;
+  error?: Error;
 }
 
 export function useYtdl(id: string): State {
-  const handleError = useErrorHandler();
   const [state, setState] = useState<State>({ loading: true });
 
   useEffect(() => {
     (async () => {
       try {
+        console.log("[debug] trying ytdl.getInfo", id);
         const info = await ytdl.getInfo(id);
         console.log("[debug] ytdl.getInfo", info);
         document.title = info.videoDetails.title;
@@ -45,7 +45,8 @@ export function useYtdl(id: string): State {
           embed,
         });
       } catch (error) {
-        handleError(error);
+        console.error("[debug] ytdl.getInfo failed", error);
+        setState({ loading: false, embed: error.toString() });
       }
     })();
   }, []);

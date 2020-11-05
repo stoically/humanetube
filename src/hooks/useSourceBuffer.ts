@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+// import pDebounce from "p-debounce";
+import pLimit from "p-limit";
 
 interface Props {
   mediasource: MediaSource;
@@ -32,6 +34,8 @@ const BUFFER_HIGH = 60; // secs
 const BUFFER_LOW = 30; // secs
 const BUFFER_REMOVE = 15; // secs
 
+const limit = pLimit(1);
+
 export function useSourceBuffer({
   mediasource,
   videoElement,
@@ -52,7 +56,6 @@ export function useSourceBuffer({
 
   function stream({ readerFn, buffer }: StreamArgs) {
     const reader = readerFn();
-    let buffering = true;
 
     function totalBuffered() {
       if (!buffer.buffered.length) return 0;
@@ -86,46 +89,47 @@ export function useSourceBuffer({
       return buffer.buffered.start(0) > videoElement.currentTime;
     }
 
-    let checkingBuffer = false;
-    async function bufferCheck() {
-      if (checkingBuffer) return;
-      if (!buffer.buffered.length) return;
-      if (buffer.updating) return;
-      checkingBuffer = true;
+    const bufferCheck = () =>
+      limit(async () => {
+        console.log("buffercheck start", buffer.buffered.length);
+        if (!buffer.buffered.length) return;
 
-      if (bufferAhead()) {
-        // this happens when seeking to a position we already removed previously
-        await cleanup();
-        if (buffer.buffered.length) {
+        if (bufferAhead()) {
+          console.log("removing full buffer");
+          await cleanup();
           await removeBuffer(buffer.buffered.start(0), buffer.buffered.end(0));
+          setState(stream({ readerFn, buffer }));
+          console.log("buffercheck end");
+          return;
         }
-        setState(stream({ readerFn, buffer }));
-        return;
-      }
 
-      if (!buffering && previousBuffered() > BUFFER_LOW) {
-        const start = buffer.buffered.start(0);
-        const end = buffer.buffered.end(0);
-        const remove = start + BUFFER_REMOVE;
-        await removeBuffer(start, remove > end ? end : remove);
-      }
+        if (previousBuffered() > BUFFER_LOW) {
+          const start = buffer.buffered.start(0);
+          const end = buffer.buffered.end(0);
+          const remove = start + BUFFER_REMOVE;
+          console.log(
+            "removing previous buffer",
+            start,
+            remove > end ? end : remove
+          );
+          await removeBuffer(start, remove > end ? end : remove);
+        }
 
-      if (!buffering && forwardBuffer() < BUFFER_LOW) {
-        buffering = true;
-        reader.resume();
-      }
+        if (forwardBuffer() < BUFFER_HIGH) {
+          console.log("resuming");
+          videoElement.removeEventListener("timeupdate", bufferCheck);
+          reader.resume();
+        } else {
+          videoElement.addEventListener("timeupdate", bufferCheck);
+        }
 
-      checkingBuffer = false;
-    }
-    videoElement.addEventListener("timeupdate", bufferCheck);
+        console.log("buffercheck end");
+      });
+
     videoElement.addEventListener("seeking", bufferCheck);
 
-    function updateendListener() {
-      if (forwardBuffer() < BUFFER_HIGH) {
-        reader.resume();
-      } else {
-        buffering = false;
-      }
+    async function updateendListener() {
+      await bufferCheck();
     }
 
     function removeBuffer(start: number, end: number) {
@@ -144,7 +148,6 @@ export function useSourceBuffer({
     buffer.addEventListener("updateend", updateendListener);
     buffer.addEventListener("error", console.error);
     reader.addListener("data", (data) => {
-      buffering = true;
       reader.pause();
       try {
         buffer.appendBuffer(data);

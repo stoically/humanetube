@@ -26,7 +26,7 @@ export function Theater(): JSX.Element {
 
   const { loading, embed, info, formats } = useYtdl(id);
 
-  if (loading || !info || !formats) {
+  if (loading) {
     return <div>Focusing...</div>;
   }
 
@@ -40,32 +40,35 @@ export function Theater(): JSX.Element {
     ></iframe>
   );
 
-  const controls = !embed ? (
-    videoElement && (
-      <Controls
-        videoElement={videoElement}
-        mediasource={mediasource}
-        info={info}
-        formats={formats}
-      />
-    )
-  ) : (
-    <div
-      style={{ paddingBottom: 15 }}
-    >{`Using regular YouTube embedding because: ${embed}`}</div>
-  );
+  const controls =
+    !embed && formats && info ? (
+      videoElement && (
+        <Controls
+          videoElement={videoElement}
+          mediasource={mediasource}
+          info={info}
+          formats={formats}
+        />
+      )
+    ) : (
+      <div
+        style={{ paddingBottom: 15 }}
+      >{`Using regular YouTube embedding because: ${embed}`}</div>
+    );
 
   return (
     <>
       <div className="theater">{video}</div>
       <div>
-        <div style={{ padding: 15 }}>
-          <h5>{info.videoDetails.title}</h5>
-          <div style={{ paddingTop: 5 }}>
-            {info.videoDetails.ownerChannelName},{" "}
-            {info.videoDetails.publishDate}
+        {info && (
+          <div style={{ padding: 15 }}>
+            <h5>{info.videoDetails.title}</h5>
+            <div style={{ paddingTop: 5 }}>
+              {info.videoDetails.ownerChannelName},{" "}
+              {info.videoDetails.publishDate}
+            </div>
           </div>
-        </div>
+        )}
 
         <div style={{ padding: 15 }}>
           {controls}
