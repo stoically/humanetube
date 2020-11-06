@@ -2,7 +2,7 @@
   "description": "Redirects YouTube URLs to a Firefox extension page",
   "manifest_version": 2,
   "name": "HumaneTube",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "permissions": [
     "https://*.youtube.com/*",
     "https://*.youtube-nocookie.com/*",
