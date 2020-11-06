@@ -4,10 +4,10 @@
     "dev": "webpack --watch --mode development"
   },
   "dependencies": {
+    "auto-bind": "^4.0.0",
     "buffer": "^6.0.1",
     "https-browserify": "^1.0.0",
-    "p-debounce": "^2.1.0",
-    "p-limit": "^3.0.2",
+    "p-queue": "^6.6.2",
     "process": "^0.11.10",
     "querystring-es3": "^0.2.1",
     "react": "^17.0.1",
