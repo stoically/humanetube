@@ -5,6 +5,7 @@
   "version": "0.0.10",
   "permissions": [
     "https://*.youtube.com/*",
+    "https://*.youtube-nocookie.com/*",
     "https://youtu.be/*",
     "https://*.googlevideo.com/*",
     "tabs",
