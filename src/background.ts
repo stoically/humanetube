@@ -93,3 +93,25 @@ browser.webRequest.onBeforeRequest.addListener(
   { urls: ["<all_urls>"], types: ["main_frame"] },
   ["blocking"]
 );
+
+// remove outgoing user-agent so that we don't break if the user decides to
+// change the UA to something fancy
+//
+// remove cookie header. the calls to `fetch` from `stream-http` have
+// `credentials` by default set to `same-origin`, and since we have host
+// permissions for yt domains, this means we receive and send cookies. this
+// leads to breakage over time because yt starts to respond weirdly. it also
+// enables tracking from yt. this could be solved by setting `credentials` to
+// `omit`, but that's blocked upstream:
+// - https://github.com/jhiesey/stream-http/issues/119
+// - https://github.com/fent/node-miniget/issues/52
+// - https://github.com/stoically/humanetube/issues/8
+browser.webRequest.onBeforeSendHeaders.addListener(
+  (request) => ({
+    requestHeaders: request.requestHeaders?.filter(
+      (header) => !["cookie", "user-agent"].includes(header.name.toLowerCase())
+    ),
+  }),
+  { urls: ["<all_urls>"] },
+  ["blocking", "requestHeaders"]
+);
