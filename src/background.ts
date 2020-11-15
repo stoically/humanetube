@@ -107,11 +107,21 @@ browser.webRequest.onBeforeRequest.addListener(
 // - https://github.com/fent/node-miniget/issues/52
 // - https://github.com/stoically/humanetube/issues/8
 browser.webRequest.onBeforeSendHeaders.addListener(
-  (request) => ({
-    requestHeaders: request.requestHeaders?.filter(
-      (header) => !["cookie", "user-agent"].includes(header.name.toLowerCase())
-    ),
-  }),
+  (request) => {
+    if (
+      request.type !== "main_frame" &&
+      !!request.originUrl?.startsWith(EXTENSION_URL)
+    ) {
+      return {
+        requestHeaders: request.requestHeaders?.filter(
+          (header) =>
+            !["cookie", "user-agent"].includes(header.name.toLowerCase())
+        ),
+      };
+    }
+
+    return {};
+  },
   { urls: ["<all_urls>"] },
   ["blocking", "requestHeaders"]
 );
