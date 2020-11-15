@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { downloadFromInfo, videoInfo } from "ytdl-core";
 import { SelectPicker } from "rsuite";
 import { Formats } from "~/types";
@@ -17,18 +17,46 @@ export function Controls({
   info,
   formats,
 }: Props): JSX.Element {
+  const [videoFormat] = useState(() => {
+    const storageType = localStorage.getItem("video.preferred.itag");
+
+    if (storageType !== null) {
+      for (const type of formats.video) {
+        if (type.itag.toString() === storageType) {
+          return type;
+        }
+      }
+    }
+
+    return formats.video[0];
+  });
+
+  const [audioFormat] = useState(() => {
+    const storageType = localStorage.getItem("audio.preferred.itag");
+
+    if (storageType !== null) {
+      for (const type of formats.audio) {
+        if (type.itag.toString() === storageType) {
+          return type;
+        }
+      }
+    }
+
+    return formats.audio[0];
+  });
+
   const video = useSourceBuffer({
     mediasource,
     videoElement,
-    type: formats.video[0].mimeType,
-    readerFn: () => downloadFromInfo(info, { format: formats.video[0] }),
+    type: videoFormat.mimeType,
+    readerFn: () => downloadFromInfo(info, { format: videoFormat }),
   });
 
   const audio = useSourceBuffer({
     mediasource,
     videoElement,
-    type: formats.audio[0].mimeType,
-    readerFn: () => downloadFromInfo(info, { format: formats.audio[0] }),
+    type: audioFormat.mimeType,
+    readerFn: () => downloadFromInfo(info, { format: audioFormat }),
   });
 
   useEffect(() => {
@@ -56,36 +84,42 @@ export function Controls({
         placement="topStart"
         cleanable={false}
         searchable={false}
-        defaultValue={0}
+        defaultValue={formats.video.findIndex(
+          (format) => format.itag === videoFormat.itag
+        )}
         data={formats.video.map(({ qualityLabel, mimeType }, index) => ({
           label: `${qualityLabel} ${mimeType}`,
           value: index,
         }))}
-        onChange={(value) =>
+        onChange={(value) => {
+          const format = formats.video[value];
+          localStorage.setItem("video.preferred.itag", format.itag.toString());
           video.changeType({
-            type: formats.video[value].mimeType,
-            readerFn: () =>
-              downloadFromInfo(info, { format: formats.video[value] }),
-          })
-        }
+            type: format.mimeType,
+            readerFn: () => downloadFromInfo(info, { format }),
+          });
+        }}
       />
       <SelectPicker
         style={{ paddingRight: 10 }}
         placement="topStart"
         cleanable={false}
         searchable={false}
-        defaultValue={0}
+        defaultValue={formats.audio.findIndex(
+          (format) => format.itag === audioFormat.itag
+        )}
         data={formats.audio.map(({ audioBitrate, mimeType }, index) => ({
           label: `${audioBitrate}bit ${mimeType}`,
           value: index,
         }))}
-        onChange={(value) =>
+        onChange={(value) => {
+          const format = formats.audio[value];
+          localStorage.setItem("audio.preferred.itag", format.itag.toString());
           audio.changeType({
-            type: formats.audio[value].mimeType,
-            readerFn: () =>
-              downloadFromInfo(info, { format: formats.audio[value] }),
-          })
-        }
+            type: format.mimeType,
+            readerFn: () => downloadFromInfo(info, { format }),
+          });
+        }}
       />
     </>
   );
