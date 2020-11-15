@@ -36,7 +36,7 @@ class SourceBufferStream {
   bufferMax = Infinity;
   bufferLow = 0;
   bufferRemove = 0;
-  resume = Promise.resolve();
+  readyToResume = Promise.resolve();
   _interval!: NodeJS.Timeout;
   missedData?: any;
 
@@ -58,7 +58,7 @@ class SourceBufferStream {
 
   initialize() {
     this.buffer.addEventListener("updateend", this.maybeResume);
-    this.buffer.addEventListener("error", console.error);
+    this.buffer.addEventListener("error", this.bufferError);
     this.reader.addListener("data", this.readerData);
     this.reader.addListener("end", this.readerEnd);
     this.videoElement.addEventListener("seeking", this.videoSeeking);
@@ -67,11 +67,15 @@ class SourceBufferStream {
     }, 500);
   }
 
+  bufferError(error: Event) {
+    console.error("buffer listener error", error);
+  }
+
   async cleanup() {
     this.reader.pause();
     clearInterval(this._interval);
     this.buffer.removeEventListener("updateend", this.maybeResume);
-    this.buffer.removeEventListener("error", console.error);
+    this.buffer.removeEventListener("error", this.bufferError);
     this.reader.removeAllListeners();
     this.videoElement.removeEventListener("seeking", this.videoSeeking);
     await this.waitForUpdateEnd();
@@ -79,7 +83,7 @@ class SourceBufferStream {
 
   async readerData(data: any) {
     this.reader.pause();
-    await this.resume;
+    await this.readyToResume;
     try {
       if (this.buffer.updating) {
         await this.waitForUpdateEnd();
@@ -87,9 +91,11 @@ class SourceBufferStream {
       this.buffer.appendBuffer(data);
     } catch (error) {
       if (error.name !== "QuotaExceededError") {
-        console.error(error);
+        console.error("readerData error", error);
         throw error;
       } else {
+        console.error("QuotaExceededError", error);
+
         if (this.bufferMax === Infinity) {
           const start = this.buffer.buffered.start(0);
           const end = this.buffer.buffered.end(0);
@@ -98,15 +104,20 @@ class SourceBufferStream {
           this.bufferRemove = this.bufferLow * 0.25;
         }
 
+        // TODO: this would need to be queued or otherwise handled sanely, since
+        // it might happen that we didn't correctly appended the previous
+        // missedData yet, breaking the buffer
         this.missedData = data;
       }
     }
   }
 
   async maybeResume() {
-    await this.resume;
+    await this.readyToResume;
 
-    if (this.forwardBuffer() < this.bufferMax) {
+    // TODO: actually we always want to resume until this.bufferMax, but this
+    // tricky to coordinate with QuotaExceededError
+    if (this.bufferMax === Infinity || this.forwardBuffer() < this.bufferLow) {
       this.reader.resume();
     }
   }
@@ -134,7 +145,7 @@ class SourceBufferStream {
     if (!this.buffer.buffered.length || !this.bufferLow || !this.bufferRemove)
       return;
 
-    this.resume = new Promise(async (resolve) => {
+    this.readyToResume = new Promise(async (resolve) => {
       await this.waitForUpdateEnd();
 
       if (this.previousBuffered() > this.bufferLow) {
