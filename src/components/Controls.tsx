@@ -38,8 +38,14 @@ export function Controls({
   }, []);
 
   useEffect(() => {
-    if (video.readerEnd && audio.readerEnd) {
-      mediasource.endOfStream();
+    try {
+      if (mediasource.readyState !== "open") return;
+
+      if (video.readerEnd && audio.readerEnd) {
+        mediasource.endOfStream();
+      }
+    } catch (error) {
+      console.error("endOfStream error", error);
     }
   }, [video.readerEnd, audio.readerEnd]);
 
