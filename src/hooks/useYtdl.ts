@@ -24,7 +24,14 @@ export function useYtdl(id: string): State {
 
         const video = ytdl
           .filterFormats(info.formats, "videoonly")
-          .filter((format) => !!format.mimeType) as VideoFormat[];
+          .filter((format) => !!format.mimeType)
+          // TODO: we filter all `webm` formats since the appending webm to the
+          // source buffer acts weirdly and has multiple timeranges after a while
+          // regardless whether buffer mode is `segments` or `sequence`
+          .filter(
+            (format) => !format.mimeType?.startsWith("video/webm")
+          ) as VideoFormat[];
+
         const audio = ytdl
           .filterFormats(info.formats, "audioonly")
           .filter((format) => !!format.mimeType) as VideoFormat[];
