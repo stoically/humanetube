@@ -109,8 +109,10 @@ browser.webRequest.onBeforeRequest.addListener(
 browser.webRequest.onBeforeSendHeaders.addListener(
   (request) => {
     if (
+      request.tabId > -1 && // -1 === iframe
+      request.originUrl?.startsWith(EXTENSION_URL) &&
       request.type !== "main_frame" &&
-      !!request.originUrl?.startsWith(EXTENSION_URL)
+      !request.url.startsWith("https://www.youtube-nocookie.com/embed/")
     ) {
       return {
         requestHeaders: request.requestHeaders?.filter(
