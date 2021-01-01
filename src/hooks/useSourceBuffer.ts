@@ -171,7 +171,7 @@ class SourceBufferStream {
     });
   }
 
-  waitForUpdateEnd() {
+  waitForUpdateEnd(): Promise<void> {
     return new Promise((resolve) => {
       if (!this.buffer.updating) {
         resolve();

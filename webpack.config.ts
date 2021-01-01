@@ -47,6 +47,7 @@ const config: webpack.Configuration = {
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
+    // @ts-ignore
     plugins: [new TsconfigPathsPlugin()],
     fallback: {
       stream: require.resolve("stream-browserify"),
@@ -54,6 +55,7 @@ const config: webpack.Configuration = {
       http: require.resolve("stream-http"),
       url: require.resolve("url"),
       querystring: require.resolve("querystring-es3"),
+      timers: require.resolve("timers-browserify"),
     },
   },
   output: {
